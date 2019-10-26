@@ -9,8 +9,12 @@
 
 #pragma once
 
-#include <memory> // std::allocator
+// Includes
+#include <algorithm>		// std::copy_n
 #include <initializer_list> // std::initializer_list
+#include <memory>			// std::allocator
+
+using size_type = size_t;
 
 namespace non_stl
 {
@@ -18,7 +22,7 @@ namespace non_stl
 	class vector
 	{
 		// Coefficient for expanding the capacity of the underlying array
-		const int beta = 2;
+		const double beta = 1.5;
 
 		// ---------------
 		// BEGIN INTERFACE
@@ -34,8 +38,8 @@ namespace non_stl
 		// Fill constructor
 		// Constructs a vector with size elements
 		// Each element is a copy of val if provided
-		explicit vector(size_t size);
-		vector(size_t size, const T& val);
+		explicit vector(size_type size);
+		vector(size_type size, const T& val);
 
 		// Range constructor
 
@@ -61,19 +65,52 @@ namespace non_stl
 		~vector();
 
 		// ---------------
+		// ITERATORS
+		// ---------------
+
+		// ---------------
+		// CAPACITY
+		// ---------------
+
+		// Returns the number of elements in the vector
+		size_type size() const;
+
+		// Return the maximum number of elements the vector can hold
+		constexpr size_type max_size() const;
+
+		// Resizes the container so that it contains n elements
+		// May reduce or increase the size of vector
+		void resize(size_type n);
+		void resize(size_type n, const T& val);
+
+		// Returns the size of the storage space currently allocated for the vector,
+		// expressed in terms of elements
+		size_type capacity() const;
+
+		// Returns whether the vector is empty 
+		//(i.e. whether its size is 0)
+		bool empty() const;
+
+		// Requests that the vector capacity be at least enough to contain n elements
+		void reserve(size_type n);
+
+		// Requests the container to reduce its capacity to fit its size
+		void shrink_to_fit();
+
+		// ---------------
 		// ELEMENT ACCESS
 		// ---------------
 
 		// Returns a reference to the element at position n in the vector
 		// with no range check
-		T& operator[](int n);
-		const T& operator[](int n) const;
+		T& operator[](size_type n);
+		const T& operator[](size_type n) const;
 
 		// Returns a reference to the element at position n in the vector
 		// Function throws an out of range exception if the input is not within range
 		// Use the operator[] overload to access without range checking
-		T& at(int n);
-		const T& at(int n) const;
+		T& at(size_type n);
+		const T& at(size_type n) const;
 
 		// Returns a reference to the first element in the vector
 		T& front();
@@ -88,16 +125,42 @@ namespace non_stl
 		T* data();
 		const T* data() const;
 
+		// ---------------
+		// MODIFIERS
+		// ---------------
+		void pop_back();
+
+		// ---------------
+		// ALLOCATOR
+		// ---------------
+
+		// ---------------
+		// NON MEMBER FUNCTION
+		// OVERLOADS
+		// ---------------
+
 	private:
+		// Private functions
+
+		// Reallocate _data to be of capacity cap
+		// Copy all elements from _data over and assign _capacity = cap
+		void reallocate(size_type cap);
+
+		// Call pop_back n times
+		void pop_back_n(size_type n);
+
 		// Member variables
 		Alloc _alloc;
-		size_t _capacity;
-		size_t _size;
+		size_type _capacity;
+		size_type _size;
 		T* _data;
 	};
 
+	// ---------------
+	// CONSTRUCTORS
+	// ---------------
 	template <class T, class Alloc>
-	vector<T, Alloc>::vector(size_t size) :
+	vector<T, Alloc>::vector(size_type size) :
 		_capacity(size),
 		_size(0),
 		_data(_alloc.allocate(size))
@@ -106,89 +169,244 @@ namespace non_stl
 	}
 
 	template <class T, class Alloc>
-	vector<T, Alloc>::vector(size_t size, const T& val) :
-		_capacity(beta * size),
+	vector<T, Alloc>::vector(size_type size, const T& val) :
+		_capacity((size_type)(beta * size)),
 		_size(size),
 		_data(_alloc.allocate(size))
 	{
-		for (size_t i = 0; i < size; ++i)
+		for (size_type i = 0; i < size; ++i)
 		{
+			// TODO EMPLACE CONSTRUCTION HERE
 			T cp(val);
 			_data[i] = cp;
 		}
 	}
 
+	// ---------------
+	// OPERATOR=
+	// ---------------
+
+	// ---------------
+	// DESTRUCTOR
+	// ---------------
 	template <class T, class Alloc>
 	vector<T, Alloc>::~vector()
 	{
 		_alloc.deallocate(_data, _capacity);
 	}
 
-	 template <class T, class Alloc>
-	 inline T& vector<T, Alloc>::operator[](int n)
-	 {
-		 return _data[n];
-	 }
+	// ---------------
+	// ITERATORS
+	// ---------------
 
-	 template <class T, class Alloc>
-	 inline const T& vector<T, Alloc>::operator[](int n) const
-	 {
-		 return _data[n];
-	 }
+	// ---------------
+	// CAPACITY
+	// ---------------
+	template <class T, class Alloc>
+	inline size_type vector<T, Alloc>::size() const
+	{
+		return _size;
+	}
 
-	 template <class T, class Alloc>
-	 inline T& vector<T, Alloc>::at(int n)
-	 {
-		 if (n < 0 || n >= _size)
-		 {
-			 // throw out of range exception
-		 }
-		 return _data[n];
-	 }
+	template <class T, class Alloc>
+	constexpr size_type vector<T, Alloc>::max_size() const
+	{
+		// TODO probably not a completely accurate measure
+		// due to hitting memory constraints long before having this many elements
+		return std::numeric_limits<size_type>::max();
+	}
 
-	 template <class T, class Alloc>
-	 inline const T& vector<T, Alloc>::at(int n) const
-	 {
-		 if (n < 0 || n >= _size)
-		 {
-			 // throw out of range exception
-		 }
-		 return _data[n];
-	 }
+	template <class T, class Alloc>
+	void vector<T, Alloc>::resize(size_type n)
+	{
+		// Reduce content to first n elements
+		// Discarding any others
+		if (n < _size)
+		{
+			// Pop back on the vector (_size - n) times
+			pop_back_n(_size - n);
+		}
+		else if (n <= _capacity)
+		{
+			// Insert at the end as many elements as needed to reach size n
+			// No element specified to assign, so leave uninitialized memory
+			_size = n;
+		}
+		else
+		{
+			// Perform reallocation of the array
+			reallocate(n);
+		}
+	}
 
-	 template <class T, class Alloc>
-	 inline T& vector<T, Alloc>::front()
-	 {
-		 return _data[0];
-	 }
+	template <class T, class Alloc>
+	void vector<T, Alloc>::resize(size_type n, const T& val)
+	{
+		size_type old_size = _size;
+		resize(n);
 
-	 template <class T, class Alloc>
-	 inline const T& vector<T, Alloc>::front() const
-	 {
-		 return _data[0];
-	 }
+		// Need to assign the new values of the resized vector to val
+		if (n >= old_size)
+		{
+			for (size_type i = old_size - 1; i < _size; ++i)
+			{
+				// TODO EMPLACE CONSTRUCTION HERE
+				T cp(val);
+				_data[i] = cp;
+			}
+		}
+	}
 
-	 template <class T, class Alloc>
-	 inline T& vector<T, Alloc>::back()
-	 {
-		 return _data[_size - 1];
-	 }	
+	template <class T, class Alloc>
+	inline size_type vector<T, Alloc>::capacity() const
+	{
+		return _capacity;
+	}
 
-	 template <class T, class Alloc>
-	 inline const T& vector<T, Alloc>::back() const
-	 {
-		 return _data[_size - 1];
-	 }
+	template <class T, class Alloc>
+	inline bool vector<T, Alloc>::empty() const
+	{
+		return size() == 0;
+	}
 
-	 template <class T, class Alloc>
-	 inline T* vector<T, Alloc>::data()
-	 {
-		 return _data;
-	 }
+	template <class T, class Alloc>
+	void vector<T, Alloc>::reserve(size_type n)
+	{
+		if (n <= _size)
+		{
+			return;
+		}
+		
+		reallocate(n);
+	}
 
-	 template <class T, class Alloc>
-	 inline const T* vector<T, Alloc>::data() const
-	 {
-		 return _data;
-	 }
+	template <class T, class Alloc>
+	void vector<T, Alloc>::shrink_to_fit()
+	{
+		// If capacity is bigger than size then reallocate to _size
+		// calling reallocate is safe since we are allocating the new
+		// array to be of size _size so we won't go into memory we
+		// aren't supposed to
+		if (_capacity > _size)
+		{
+			reallocate(_size);
+		}
+	}
+
+	// ---------------
+	// ELEMENT ACCESS
+	// ---------------
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::operator[](size_type n)
+	{
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::operator[](size_type n) const
+	{
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::at(size_type n)
+	{
+		if (n < 0 || n >= _size)
+		{
+			// throw out of range exception
+		}
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::at(size_type n) const
+	{
+		if (n < 0 || n >= _size)
+		{
+			// throw out of range exception
+		}
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::front()
+	{
+		return _data[0];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::front() const
+	{
+		return _data[0];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::back()
+	{
+		return _data[_size - 1];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::back() const
+	{
+		return _data[_size - 1];
+	}
+
+	template <class T, class Alloc>
+	inline T* vector<T, Alloc>::data()
+	{
+		return _data;
+	}
+
+	template <class T, class Alloc>
+	inline const T* vector<T, Alloc>::data() const
+	{
+		return _data;
+	}
+
+	// ---------------
+	// MODIFIERS
+	// ---------------
+	template <class T, class Alloc>
+	void vector<T, Alloc>::pop_back()
+	{
+		// Call destructor on the last element in the vector
+		// and decrement size so we can write over it later
+		_data[_size - 1].~T();
+		--_size;
+	}
+
+	// ---------------
+	// ALLOCATOR
+	// ---------------
+
+	// ---------------
+	// NON MEMBER FUNCTION
+	// OVERLOADS
+	// ---------------
+
+	// ---------------
+	// PRIVATE
+	// ---------------
+	template <class T, class Alloc>
+	void vector<T, Alloc>::reallocate(size_type cap)
+	{
+		// Allocate new array and copy over data
+		T* cp = _alloc.allocate(cap);
+		std::copy_n(_data, _size, cp);
+
+		// Deallocate old array and reassign member variables
+		_alloc.deallocate(_data, _capacity);
+		_data = cp;
+		_capacity = cap;
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::pop_back_n(size_type n)
+	{
+		for (size_type i = 0; i < n; ++i)
+		{
+			pop_back();
+		}
+	}
 }
