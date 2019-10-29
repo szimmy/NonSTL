@@ -45,10 +45,10 @@ namespace non_stl
 		// Range constructor
 
 		// Copy constructor
-		//vector(const vector& rhs);
+		vector(const vector& rhs);
 
 		// Move constructor
-		//vector(vector&& rhs);
+		vector(vector&& rhs);
 
 		// Initializer list constructor
 		//vector(std::initializer_list<T> init);
@@ -199,6 +199,28 @@ namespace non_stl
 		}
 	}
 
+	template <class T, class Alloc>
+	vector<T, Alloc>::vector(const vector<T, Alloc>& rhs) :
+		_alloc(rhs._alloc),
+		_capacity(rhs._capacity),
+		_size(rhs._size),
+		_data(_alloc.allocate(_size))
+	{
+		std::copy_n(rhs._data, _size, _data);
+	}
+
+	template <class T, class Alloc>
+	vector<T, Alloc>::vector(vector<T, Alloc>&& rhs) :
+		_alloc(rhs._alloc),
+		_capacity(rhs._capacity),
+		_size(rhs._size),
+		_data(rhs._data)
+	{
+		rhs._capacity = 0;
+		rhs._size = 0;
+		rhs._data = nullptr;
+	}
+
 	// ---------------
 	// OPERATOR=
 	// ---------------
@@ -209,7 +231,10 @@ namespace non_stl
 	template <class T, class Alloc>
 	vector<T, Alloc>::~vector()
 	{
-		_alloc.deallocate(_data, _capacity);
+		if (_data)
+		{
+			_alloc.deallocate(_data, _capacity);
+		}
 	}
 
 	// ---------------
