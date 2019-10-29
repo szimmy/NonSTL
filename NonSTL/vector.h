@@ -10,7 +10,7 @@
 #pragma once
 
 // Includes
-#include <algorithm>		// std::copy_n
+#include <algorithm>		// std::copy_n, std::swap
 #include <initializer_list> // std::initializer_list
 #include <memory>			// std::allocator
 #include <utility>			// std::forward
@@ -48,7 +48,7 @@ namespace non_stl
 		vector(const vector& rhs);
 
 		// Move constructor
-		vector(vector&& rhs);
+		vector(vector&& rhs) noexcept;
 
 		// Initializer list constructor
 		//vector(std::initializer_list<T> init);
@@ -56,8 +56,8 @@ namespace non_stl
 		// ---------------
 		// OPERATOR=
 		// ---------------
-		//vector& operator=(const vector& rhs);
-		//vector& operator=(vector&& rhs);
+		vector& operator=(const vector& rhs);
+		vector& operator=(vector&& rhs);
 		//vector& operator=(std::initializer_list<T> init);
 
 		// ---------------
@@ -194,7 +194,7 @@ namespace non_stl
 		for (size_type i = 0; i < size; ++i)
 		{
 			// TODO EMPLACE CONSTRUCTION HERE
-			T cp(val);
+			auto cp = T(val);
 			_data[i] = cp;
 		}
 	}
@@ -210,7 +210,7 @@ namespace non_stl
 	}
 
 	template <class T, class Alloc>
-	vector<T, Alloc>::vector(vector<T, Alloc>&& rhs) :
+	vector<T, Alloc>::vector(vector<T, Alloc>&& rhs) noexcept(true) :
 		_alloc(rhs._alloc),
 		_capacity(rhs._capacity),
 		_size(rhs._size),
@@ -224,6 +224,33 @@ namespace non_stl
 	// ---------------
 	// OPERATOR=
 	// ---------------
+	template <class T, class Alloc>
+	vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& rhs)
+	{
+		// Deallocate currently allocated data
+		~vector();
+
+		// Assign member variablez
+		_alloc = rhs._alloc;
+		_capacity = rhs._capacity;
+		_size = rhs._size;
+
+		// Initialize proper sized container and copy elements
+		_data = _alloc.allocate(_capacity);
+		std::copy_n(rhs_data, _size, _data);
+	}
+
+	template <class T, class Alloc>
+	vector<T, Alloc>& vector<T, Alloc>::operator=(vector<T, Alloc>&& rhs)
+	{
+		// Swap all variables with the rvalue
+		// The destructor will be called on rvalue which will
+		// clean up the memory allocated to the original vector
+		std::swap(_alloc, rhs._alloc);
+		std::swap(_capacity, rhs._capacity);
+		std::swap(_size, rhs._size);
+		std::swap(_data, rhs._data);
+	}
 
 	// ---------------
 	// DESTRUCTOR
@@ -233,7 +260,17 @@ namespace non_stl
 	{
 		if (_data)
 		{
+			// Destruct every element contained in the vector
+			for (auto i = 0; i < _size; ++i)
+			{
+				_data[i].~T();
+			}
+
+			// Deallocate _data
 			_alloc.deallocate(_data, _capacity);
+			_data = nullptr;
+			_capacity = 0;
+			_size = 0;
 		}
 	}
 
@@ -284,16 +321,16 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::resize(size_type n, const T& val)
 	{
-		size_type old_size = _size;
+		auto old_size = _size;
 		resize(n);
 
 		// Need to assign the new values of the resized vector to val
 		if (n >= old_size)
 		{
-			for (size_type i = old_size - 1; i < _size; ++i)
+			for (auto i = old_size - 1; i < _size; ++i)
 			{
 				// TODO EMPLACE CONSTRUCTION HERE
-				T cp(val);
+				auto cp = T(val);
 				_data[i] = cp;
 			}
 		}
@@ -419,7 +456,7 @@ namespace non_stl
 			reallocate((size_type)beta * _capacity);
 		}
 
-		T cp(val);
+		auto cp = T(val);
 		_data[_size++] = cp;
 	}
 
@@ -431,7 +468,7 @@ namespace non_stl
 			reallocate((size_type)beta * _capacity);
 		}
 
-		T cp(std::forward<T>(val+1));
+		auto cp = T(std::forward<T>(val+1));
 		_data[_size++] = cp;
 	}
 
@@ -460,7 +497,7 @@ namespace non_stl
 	void vector<T, Alloc>::reallocate(size_type cap)
 	{
 		// Allocate new array and copy over data
-		T* cp = _alloc.allocate(cap);
+		auto cp = _alloc.allocate(cap);
 		std::copy_n(_data, _size, cp);
 
 		// Deallocate old array and reassign member variables
@@ -472,7 +509,7 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::pop_back_n(size_type n)
 	{
-		for (size_type i = 0; i < n; ++i)
+		for (auto i = 0; i < n; ++i)
 		{
 			pop_back();
 		}
