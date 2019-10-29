@@ -152,6 +152,9 @@ namespace non_stl
 		// which is another vector object of the same type
 		void swap(vector& x);
 
+		// Removes all elements from the vector leaving the container with a size of 0
+		void clear() noexcept;
+
 		// ---------------
 		// ALLOCATOR
 		// ---------------
@@ -490,6 +493,21 @@ namespace non_stl
 		std::swap(_capacity, x._capacity);
 		std::swap(_size, x._size);
 		std::swap(_data, x._data);
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::clear() noexcept
+	{
+		// pop_back_n(_size) would be a cleaner
+		// implementation in terms of reuse
+		// but holds the overhead of performing
+		// _size decremenets when we know we are
+		// going all the way to 0 every time
+		for (auto i = 0; i < _size; ++i)
+		{
+			_data[i].~T();
+		}
+		_size = 0;
 	}
 
 	// ---------------
