@@ -13,6 +13,7 @@
 #include <algorithm>		// std::copy_n
 #include <initializer_list> // std::initializer_list
 #include <memory>			// std::allocator
+#include <utility>			// std::forward
 
 using size_type = size_t;
 
@@ -128,6 +129,22 @@ namespace non_stl
 		// ---------------
 		// MODIFIERS
 		// ---------------
+
+		// Assign new contents to the vector, replacing its current contents
+		// and modifying its size if necessary
+
+		// Range version
+
+		// Fill version
+		//void assign(size_type n, const T& val);
+
+		// Initializer list version
+		//void assign(std::initializer_list<T> il);
+
+		// Adds a new element at the end of the vector after its current last element
+		void push_back(const T& val);
+		void push_back(T&& val);
+
 		void pop_back();
 
 		// ---------------
@@ -311,7 +328,8 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline T& vector<T, Alloc>::at(size_type n)
 	{
-		if (n < 0 || n >= _size)
+		// n < 0 not allowed due to unsigned typing
+		if (n >= _size)
 		{
 			// throw out of range exception
 		}
@@ -321,7 +339,8 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline const T& vector<T, Alloc>::at(size_type n) const
 	{
-		if (n < 0 || n >= _size)
+		// n < 0 not allowed due to unsigned typing
+		if (n >= _size)
 		{
 			// throw out of range exception
 		}
@@ -367,6 +386,30 @@ namespace non_stl
 	// ---------------
 	// MODIFIERS
 	// ---------------
+	template <class T, class Alloc>
+	void vector<T, Alloc>::push_back(const T& val)
+	{
+		if (_size == _capacity)
+		{
+			reallocate((size_type)beta * _capacity);
+		}
+
+		T cp(val);
+		_data[_size++] = cp;
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::push_back(T&& val)
+	{
+		if (_size == _capacity)
+		{
+			reallocate((size_type)beta * _capacity);
+		}
+
+		T cp(std::forward<T>(val+1));
+		_data[_size++] = cp;
+	}
+
 	template <class T, class Alloc>
 	void vector<T, Alloc>::pop_back()
 	{
