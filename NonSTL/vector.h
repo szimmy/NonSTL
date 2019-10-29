@@ -145,7 +145,12 @@ namespace non_stl
 		void push_back(const T& val);
 		void push_back(T&& val);
 
+		// Removes the last element in the vector
 		void pop_back();
+
+		// Exchanges the content of the container by the content of x
+		// which is another vector object of the same type
+		void swap(vector& x);
 
 		// ---------------
 		// ALLOCATOR
@@ -246,10 +251,7 @@ namespace non_stl
 		// Swap all variables with the rvalue
 		// The destructor will be called on rvalue which will
 		// clean up the memory allocated to the original vector
-		std::swap(_alloc, rhs._alloc);
-		std::swap(_capacity, rhs._capacity);
-		std::swap(_size, rhs._size);
-		std::swap(_data, rhs._data);
+		swap(rhs);
 	}
 
 	// ---------------
@@ -479,6 +481,15 @@ namespace non_stl
 		// and decrement size so we can write over it later
 		_data[_size - 1].~T();
 		--_size;
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::swap(vector < T, Alloc>& x)
+	{
+		std::swap(_alloc, x._alloc);
+		std::swap(_capacity, x._capacity);
+		std::swap(_size, x._size);
+		std::swap(_data, x._data);
 	}
 
 	// ---------------
