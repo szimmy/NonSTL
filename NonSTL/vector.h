@@ -11,7 +11,7 @@
 
 // Includes
 #include <algorithm>		// std::copy_n, std::swap
-#include <initializer_list> // std::initializer_list
+#include <initializer_list>	// std::initializer_list
 #include <memory>			// std::allocator
 #include <utility>			// std::forward
 
@@ -19,6 +19,11 @@ using size_type = size_t;
 
 namespace non_stl
 {
+	// Template parameter T is the generic object being stored within the container
+	// Template parameter Alloc is the allocator which defines memory allocation for
+	// objects of type T. If a custom allocator is not provided then the default 
+	// std::allocator<T> will be used which will call the operators 
+	// new, new[], delete, delete[]
 	template <class T, class Alloc = std::allocator<T> >
 	class vector
 	{
@@ -81,6 +86,8 @@ namespace non_stl
 
 		// Resizes the container so that it contains n elements
 		// May reduce or increase the size of vector
+		// If the container is expanded and val is provided
+		// the new elements of the container will be set to val
 		void resize(size_type n);
 		void resize(size_type n, const T& val);
 
@@ -89,7 +96,7 @@ namespace non_stl
 		size_type capacity() const;
 
 		// Returns whether the vector is empty 
-		//(i.e. whether its size is 0)
+		// (i.e. whether its size is 0)
 		bool empty() const;
 
 		// Requests that the vector capacity be at least enough to contain n elements
@@ -175,9 +182,18 @@ namespace non_stl
 		void pop_back_n(size_type n);
 
 		// Member variables
+
+		// Allocator object, used to dynamically allocate memory for the arrays
 		Alloc _alloc;
+
+		// Maximum storage capacity of the vector. When _size == _capacity the vector
+		// will be reallocated and _capacity increased by a factor of beta
 		size_type _capacity;
+
+		// The current amount of elements stored within the vector
 		size_type _size;
+
+		// Underlying array of template type T which the vector wraps around
 		T* _data;
 	};
 
@@ -199,9 +215,8 @@ namespace non_stl
 		_size(size),
 		_data(_alloc.allocate(size))
 	{
-		for (size_type i = 0; i < size; ++i)
+		for (auto i = 0; i < size; ++i)
 		{
-			// TODO EMPLACE CONSTRUCTION HERE
 			auto cp = T(val);
 			_data[i] = cp;
 		}
@@ -218,12 +233,13 @@ namespace non_stl
 	}
 
 	template <class T, class Alloc>
-	vector<T, Alloc>::vector(vector<T, Alloc>&& rhs) noexcept(true) :
+	vector<T, Alloc>::vector(vector<T, Alloc>&& rhs) noexcept :
 		_alloc(rhs._alloc),
 		_capacity(rhs._capacity),
 		_size(rhs._size),
 		_data(rhs._data)
 	{
+		// set the rvalue to an undefined state since we have moved from it
 		rhs._capacity = 0;
 		rhs._size = 0;
 		rhs._data = nullptr;
@@ -238,7 +254,7 @@ namespace non_stl
 		// Deallocate currently allocated data
 		~vector();
 
-		// Assign member variablez
+		// Assign member variables
 		_alloc = rhs._alloc;
 		_capacity = rhs._capacity;
 		_size = rhs._size;
@@ -334,7 +350,6 @@ namespace non_stl
 		{
 			for (auto i = old_size - 1; i < _size; ++i)
 			{
-				// TODO EMPLACE CONSTRUCTION HERE
 				auto cp = T(val);
 				_data[i] = cp;
 			}
@@ -473,7 +488,7 @@ namespace non_stl
 			reallocate((size_type)beta * _capacity);
 		}
 
-		auto cp = T(std::forward<T>(val+1));
+		auto cp = T(std::forward<T>(val));
 		_data[_size++] = cp;
 	}
 
