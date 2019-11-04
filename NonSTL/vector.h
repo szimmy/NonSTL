@@ -48,6 +48,8 @@ namespace non_stl
 		vector(size_type size, const T& val);
 
 		// Range constructor
+		template <class InputIterator>
+		vector(InputIterator first, InputIterator last);
 
 		// Copy constructor
 		vector(const vector& rhs);
@@ -103,6 +105,7 @@ namespace non_stl
 		// ---------------
 
 		// forward declare base iterator types
+		class parent_iterator; // TODO better naming for these? parent -> base seems like a weird hierarchy
 		class base_iterator;
 		class base_const_iterator;
 		class forward_iterator;
@@ -244,161 +247,171 @@ namespace non_stl
 
 	// BASE ITERATORS
 
-	// Define base_iterator which contains the standard access and equivilancy operators
-	// for all non_const iterators to derive from
+	// Define equivalency operators and all data members
+	// for every iterator to derive from
 	template <class T, class Alloc>
-	class vector<T, Alloc>::base_iterator
+	class vector<T, Alloc>::parent_iterator
 	{
 	public:
-		base_iterator(T* ptr) :
-			_curr(ptr)
+		parent_iterator(T* ptr, size_type size, size_type idx) :
+			_curr(ptr),
+			_size(size),
+			_idx(idx)
 		{
 		}
 
-		T& operator*()
+		virtual inline bool operator==(const parent_iterator& rhs) const
 		{
-			return *_curr;
+			return (isEnd() && rhs.isEnd()) || (*_curr == *rhs._curr);
 		}
 
-		T* operator->()
-		{
-			return _curr;
-		}
-
-		inline bool operator==(const base_iterator& rhs) const
-		{
-			return *_curr == *rhs._curr;
-		}
-
-		inline bool operator!=(const base_iterator& rhs) const
+		virtual inline bool operator!=(const parent_iterator& rhs) const
 		{
 			return !(*this == rhs);
 		}
 
-	private:
+	protected:
+		inline bool isEnd() const
+		{
+			return _size == _idx;
+		}
+
 		T* _curr;
+		size_type _size;
+		size_type _idx;
 	};
 
-	// Define base_const_iterator which contains the constant access and equivilancy operators
-	// for all const iterators to derive from
+	// Define base_iterator which contains the standard access operators
+	// for all non_const iterators to derive from
 	template <class T, class Alloc>
-	class vector<T, Alloc>::base_const_iterator
+	class vector<T, Alloc>::base_iterator : virtual public parent_iterator
 	{
 	public:
-		base_const_iterator(T* ptr) :
-			_curr(ptr)
+		base_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx)
 		{
 		}
 
-		const T& operator*() const
+		virtual T& operator*()
 		{
 			return *_curr;
 		}
 
-		const T* operator->() const
+		virtual T* operator->()
 		{
 			return _curr;
 		}
+	};
 
-		inline bool operator==(const base_const_iterator& rhs) const
+	// Define base_const_iterator which contains the constant access operators
+	// for all const iterators to derive from
+	template <class T, class Alloc>
+	class vector<T, Alloc>::base_const_iterator : virtual public parent_iterator
+	{
+	public:
+		base_const_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx)
 		{
-			return *_curr == *rhs._curr;
 		}
 
-		inline bool operator!=(const base_const_iterator& rhs) const
+		virtual const T& operator*() const
 		{
-			return !(*this == rhs);
+			return *_curr;
 		}
 
-	private:
-		T* _curr;
+		virtual const T* operator->() const
+		{
+			return _curr;
+		}
 	};
 
 	// Define forward_iterator which defines the ability to iterate standardly through a container
 	// the contrast to this is reverse_iterator
 	template <class T, class Alloc>
-	class vector<T, Alloc>::forward_iterator
+	class vector<T, Alloc>::forward_iterator : virtual public parent_iterator
 	{
 	public:
-		forward_iterator(T* ptr) :
-			_curr(ptr)
+		forward_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx)
 		{
 		}
 
 		// Prefix
-		forward_iterator operator++(int)
+		virtual forward_iterator operator++(int)
 		{
 			++_curr;
+			++_idx;
 			return *this;
 		}
 
 		// Postfix
-		forward_iterator& operator++()
+		virtual forward_iterator& operator++()
 		{
 			_curr++;
+			_idx++;
 			return *this;
 		}
 
 		// Prefix
-		forward_iterator operator--(int)
+		virtual forward_iterator operator--(int)
 		{
 			--_curr;
+			--_idx;
 			return *this;
 		}
 
 		// Postfix
-		forward_iterator& operator--()
+		virtual forward_iterator& operator--()
 		{
 			_curr--;
+			_idx--;
 			return *this;
 		}
-
-	private:
-		T* _curr;
 	};
 
 	// Define base_reverse_iterator which defines the ability to iterate through a container the opposite of the
 	// operator you are invoking. Increment operator takes you to the iterator before the current iterator.
 	// The contrast to this is forward_iterator
 	template <class T, class Alloc>
-	class vector<T, Alloc>::base_reverse_iterator
+	class vector<T, Alloc>::base_reverse_iterator : virtual public parent_iterator
 	{
 	public:
-		base_reverse_iterator(T* ptr) :
-			_curr(ptr)
+		base_reverse_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx)
 		{
 		}
 
 		// Prefix
-		base_reverse_iterator operator++(int)
+		virtual base_reverse_iterator operator++(int)
 		{
 			--_curr;
+			--_idx;
 			return *this;
 		}
 
 		// Postfix
-		base_reverse_iterator& operator++()
+		virtual base_reverse_iterator& operator++()
 		{
 			_curr--;
+			_idx--;
 			return *this;
 		}
 
 		// Prefix
-		base_reverse_iterator operator--(int)
+		virtual base_reverse_iterator operator--(int)
 		{
 			++_curr;
+			++_idx;
 			return *this;
 		}
 
 		// Postfix
-		base_reverse_iterator& operator--()
+		virtual base_reverse_iterator& operator--()
 		{
 			_curr++;
+			_idx++;
 			return *this;
 		}
-
-	private:
-		T* _curr;
 	};
 
 	// ITERATOR IMPLEMENTATIONS
@@ -409,9 +422,10 @@ namespace non_stl
 									   public vector<T, Alloc>::forward_iterator
 	{
 	public:
-		iterator(T* ptr) :
-			base_iterator(ptr),
-			forward_iterator(ptr)
+		iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx),
+			base_iterator(ptr, size, idx),
+			forward_iterator(ptr, size, idx)
 		{
 		}
 	};
@@ -422,9 +436,10 @@ namespace non_stl
 											 public vector<T, Alloc>::forward_iterator
 	{
 	public:
-		const_iterator(T* ptr) :
-			base_const_iterator(ptr),
-			forward_iterator(ptr)
+		const_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx),
+			base_const_iterator(ptr, size, idx),
+			forward_iterator(ptr, size, idx)
 		{
 		}
 	};
@@ -435,9 +450,10 @@ namespace non_stl
 											   public vector<T, Alloc>::base_reverse_iterator
 	{
 	public:
-		reverse_iterator(T* ptr) :
-			base_iterator(ptr),
-			base_reverse_iterator(ptr)
+		reverse_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx),
+			base_iterator(ptr, size, idx),
+			base_reverse_iterator(ptr, size, idx)
 		{
 		}
 	};
@@ -448,9 +464,10 @@ namespace non_stl
 													 public vector<T, Alloc>::base_reverse_iterator
 	{
 	public:
-		const_reverse_iterator(T* ptr) :
-			base_const_iterator(ptr),
-			base_reverse_iterator(ptr)
+		const_reverse_iterator(T* ptr, size_type size, size_type idx) :
+			parent_iterator(ptr, size, idx),
+			base_const_iterator(ptr, size, idx),
+			base_reverse_iterator(ptr, size, idx)
 		{
 		}
 	};
@@ -479,6 +496,27 @@ namespace non_stl
 		{
 			auto cp = T(val);
 			_data[i] = cp;
+		}
+	}
+
+	template <class T, class Alloc>
+	template <class InputIterator>
+	vector<T, Alloc>::vector(InputIterator first, InputIterator last) :
+		_capacity(0),
+		_size(0)
+	{
+		for (auto it = first; it != last; it++)
+		{
+			++_size;
+		}
+
+		_capacity = (size_type)beta * _size;
+		_data = _alloc.allocate(_capacity);
+
+		auto count = 0;
+		for (auto it2 = first; it2 != last; ++it2)
+		{
+			_data[count++] = *it2;
 		}
 	}
 
@@ -662,13 +700,13 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::iterator vector<T, Alloc>::begin() noexcept
 	{
-		return vector<T, Alloc>::iterator(&_data[0]);
+		return vector<T, Alloc>::iterator(&_data[0], _size, 0);
 	}
 
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::begin() const noexcept
 	{
-		return vector<T, Alloc>::const_iterator(&_data[0]);
+		return vector<T, Alloc>::const_iterator(&_data[0], _size, 0);
 	}
 
 	template <class T, class Alloc>
@@ -680,13 +718,13 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::iterator vector<T, Alloc>::end() noexcept
 	{
-		return vector<T, Alloc>::iterator(&_data[_size]);
+		return vector<T, Alloc>::iterator(&_data[_size], _size, _size);
 	}
 
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::end() const noexcept
 	{
-		return vector<T, Alloc>::const_iterator(&_data[_size]);
+		return vector<T, Alloc>::const_iterator(&_data[_size], _size, _size);
 	}
 
 	template <class T, class Alloc>
@@ -698,13 +736,15 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rbegin() noexcept
 	{
-		return vector<T, Alloc>::reverse_iterator(&_data[_size - 1]);
+		// Size for a reverse iterator is effectively -1 (one past normal beginning)
+		return vector<T, Alloc>::reverse_iterator(&_data[_size - 1], -1, _size-1);
 	}
 
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rbegin() const noexcept
 	{
-		return vector<T, Alloc>::const_reverse_iterator(&_data[_size - 1]);
+		// Size for a reverse iterator is effectively -1 (one past normal beginning)
+		return vector<T, Alloc>::const_reverse_iterator(&_data[_size - 1], -1, _size-1);
 	}
 
 	template <class T, class Alloc>
@@ -716,13 +756,15 @@ namespace non_stl
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rend() noexcept
 	{
-		return vector<T, Alloc>::reverse_iterator(&_data[-1]);
+		// Size for a reverse iterator is effectively -1 (one past normal beginning)
+		return vector<T, Alloc>::reverse_iterator(&_data[-1], -1, -1);
 	}
 
 	template <class T, class Alloc>
 	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rend() const noexcept
 	{
-		return vector<T, Alloc>::const_reverse_iterator(&_data[-1]);
+		// Size for a reverse iterator is effectively -1 (one past normal beginning)
+		return vector<T, Alloc>::const_reverse_iterator(&_data[-1], -1, -1);
 	}
 
 	template <class T, class Alloc>
@@ -839,6 +881,9 @@ namespace non_stl
 			reallocate((size_type)beta * n);
 		}
 
+		// Assign size of vector
+		_size = n;
+
 		// Assign each new element to val
 		for (auto i = 0; i < n; ++i)
 		{
@@ -861,6 +906,9 @@ namespace non_stl
 			reallocate((size_type)beta * n);
 		}
 
+		// Assign size of vector
+		_size = n;
+
 		// Assign each new element to val
 		copy_from_initializer_list(il);
 	}
@@ -868,6 +916,7 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::push_back(const T& val)
 	{
+		// Check for reallocation
 		if (_size == _capacity)
 		{
 			reallocate((size_type)beta * _capacity);
@@ -880,6 +929,7 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::push_back(T&& val)
 	{
+		// Check for reallocation
 		if (_size == _capacity)
 		{
 			reallocate((size_type)beta * _capacity);
@@ -946,6 +996,7 @@ namespace non_stl
 		// Allocate new array and copy over data
 		auto cp = _alloc.allocate(cap);
 
+		// Only copy_n if we have elements to copy
 		if(_size > 0)
 		{
 			std::copy_n(_data, _size, cp);
