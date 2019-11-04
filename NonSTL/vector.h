@@ -78,6 +78,8 @@ namespace non_stl
 		class iterator;
 		class const_iterator;
 
+
+
 		// ---------------
 		// CAPACITY
 		// ---------------
@@ -211,15 +213,31 @@ namespace non_stl
 		{
 		}
 
-		iterator& operator++()
+		// Prefix
+		iterator operator++(int)
 		{
 			++_curr;
 			return *this;
 		}
 
-		iterator& operator--()
+		// Postfix
+		iterator& operator++()
+		{
+			_curr++;
+			return *this;
+		}
+
+		// Prefix
+		iterator operator--(int)
 		{
 			--_curr;
+			return *this;
+		}
+
+		// Postfix
+		iterator& operator--()
+		{
+			_curr--;
 			return *this;
 		}
 
@@ -257,15 +275,31 @@ namespace non_stl
 		{
 		}
 
-		const_iterator& operator++()
+		// Prefix
+		const_iterator operator++(int)
 		{
 			++_curr;
 			return *this;
 		}
 
-		const_iterator& operator--()
+		// Postfix
+		const_iterator& operator++()
+		{
+			_curr++;
+			return *this;
+		}
+
+		// Prefix
+		const_iterator operator--(int)
 		{
 			--_curr;
+			return *this;
+		}
+
+		// Postfix
+		const_iterator& operator--()
+		{
+			_curr--;
 			return *this;
 		}
 
