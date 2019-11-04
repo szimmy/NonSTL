@@ -204,6 +204,9 @@ namespace non_stl
 		// ALLOCATOR
 		// ---------------
 
+		// Returns a copy of the allocator object associated with this vector
+		Alloc get_allocator() const noexcept;
+
 		// ---------------
 		// NON MEMBER FUNCTION
 		// OVERLOADS
@@ -853,6 +856,12 @@ namespace non_stl
 	// ---------------
 	// ALLOCATOR
 	// ---------------
+
+	template <class T, class Alloc>
+	Alloc vector<T, Alloc>::get_allocator() const noexcept
+	{
+		return _alloc;
+	}
 
 	// ---------------
 	// NON MEMBER FUNCTION
