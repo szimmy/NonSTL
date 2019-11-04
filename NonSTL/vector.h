@@ -74,6 +74,10 @@ namespace non_stl
 		// ITERATORS
 		// ---------------
 
+		// forward declare iterator types
+		class iterator;
+		class const_iterator;
+
 		// ---------------
 		// CAPACITY
 		// ---------------
@@ -196,6 +200,100 @@ namespace non_stl
 		// Underlying array of template type T which the vector wraps around
 		T* _data;
 	};
+
+	// Iterator definition and impl
+	template <class T, class Alloc>
+	class vector<T, Alloc>::iterator
+	{
+	public:
+		iterator(T* ptr) :
+			_curr(ptr)
+		{
+		}
+
+		iterator& operator++()
+		{
+			++_curr;
+			return *this;
+		}
+
+		iterator& operator--()
+		{
+			--_curr;
+			return *this;
+		}
+
+		T& operator*()
+		{
+			return *_curr;
+		}
+
+		T* operator->()
+		{
+			return _curr;
+		}
+
+		inline bool operator==(const iterator& rhs) const
+		{
+			return *_curr == *rhs._curr;
+		}
+
+		inline bool operator!=(const iterator& rhs) const
+		{
+			return !(*this == rhs);
+		}
+
+	private:
+		T* _curr;
+	};
+
+	// Const Iterator definition and impl
+	template <class T, class Alloc>
+	class vector<T, Alloc>::const_iterator
+	{
+	public:
+		const_iterator(T* ptr) :
+			_curr(ptr)
+		{
+		}
+
+		const_iterator& operator++()
+		{
+			++_curr;
+			return *this;
+		}
+
+		const_iterator& operator--()
+		{
+			--_curr;
+			return *this;
+		}
+
+		const T& operator*() const
+		{
+			return *_curr;
+		}
+
+		const T* operator->() const
+		{
+			return _curr;
+		}
+
+		inline bool operator==(const const_iterator& rhs) const
+		{
+			return *_curr == *rhs._curr;
+		}
+
+		inline bool operator!=(const const_iterator& rhs) const
+		{
+			return !(*this == rhs);
+		}
+
+	private:
+		T* _curr;
+	};
+
+	// VECTOR IMPL
 
 	// ---------------
 	// CONSTRUCTORS
