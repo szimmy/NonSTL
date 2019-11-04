@@ -56,14 +56,14 @@ namespace non_stl
 		vector(vector&& rhs) noexcept;
 
 		// Initializer list constructor
-		//vector(std::initializer_list<T> init);
+		vector(std::initializer_list<T> init);
 
 		// ---------------
 		// OPERATOR=
 		// ---------------
 		vector& operator=(const vector& rhs);
 		vector& operator=(vector&& rhs);
-		//vector& operator=(std::initializer_list<T> init);
+		vector& operator=(std::initializer_list<T> init);
 
 		// ---------------
 		// DESTRUCTOR
@@ -221,6 +221,10 @@ namespace non_stl
 
 		// Call pop_back n times
 		void pop_back_n(size_type n);
+
+		// Copy items from initializer list into _data
+		// Assumed that _data is empty and properly sized
+		void copy_from_initializer_list(std::initializer_list<T>& init);
 
 		// Member variables
 
@@ -501,6 +505,15 @@ namespace non_stl
 		rhs._data = nullptr;
 	}
 
+	template <class T, class Alloc>
+	vector<T, Alloc>::vector(std::initializer_list<T> init) :
+		_capacity((size_type) beta * init.size()),
+		_size(init.size()),
+		_data(_alloc.allocate(_size))
+	{
+		copy_from_initializer_list(init);
+	}
+
 	// ---------------
 	// OPERATOR=
 	// ---------------
@@ -527,6 +540,24 @@ namespace non_stl
 		// The destructor will be called on rvalue which will
 		// clean up the memory allocated to the original vector
 		swap(rhs);
+	}
+
+	template <class T, class Alloc>
+	vector<T, Alloc>& vector<T, Alloc>::operator=(std::initializer_list<T> init)
+	{
+		// Deallocate current allocated data
+		~vector();
+
+		// Assign member variables
+		// Note alloc will remain as is already assigned
+		_size = init.size();
+		_capacity = (size_type)beta * _size;
+
+		// Initialize proper sized container
+		_data = _alloc.allocate(_capacity);
+
+		// Copy data from initializer list into _data
+		copy_from_initializer_list(init);
 	}
 
 	// ---------------
@@ -890,6 +921,16 @@ namespace non_stl
 		for (auto i = 0; i < n; ++i)
 		{
 			pop_back();
+		}
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::copy_from_initializer_list(std::initializer_list<T>& init)
+	{
+		auto count = 0;
+		for (auto it = init.begin(); it != init.end(); ++it)
+		{
+			_data[count++] = *it;
 		}
 	}
 }
