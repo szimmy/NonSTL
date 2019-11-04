@@ -71,6 +71,34 @@ namespace non_stl
 		~vector();
 
 		// ---------------
+		// ELEMENT ACCESS
+		// ---------------
+
+		// Returns a reference to the element at position n in the vector
+		// with no range check
+		T& operator[](size_type n);
+		const T& operator[](size_type n) const;
+
+		// Returns a reference to the element at position n in the vector
+		// Function throws an out of range exception if the input is not within range
+		// Use the operator[] overload to access without range checking
+		T& at(size_type n);
+		const T& at(size_type n) const;
+
+		// Returns a reference to the first element in the vector
+		T& front();
+		const T& front() const;
+
+		// Returns a reference to the last element in the vector
+		T& back();
+		const T& back() const;
+
+		// Returns a direct pointer to the memory array used internally by the vector
+		// to store its owned elements
+		T* data();
+		const T* data() const;
+
+		// ---------------
 		// ITERATORS
 		// ---------------
 
@@ -117,7 +145,7 @@ namespace non_stl
 		// ---------------
 
 		// Returns the number of elements in the vector
-		size_type size() const;
+		size_type size() const noexcept;
 
 		// Return the maximum number of elements the vector can hold
 		constexpr size_type max_size() const;
@@ -131,45 +159,17 @@ namespace non_stl
 
 		// Returns the size of the storage space currently allocated for the vector,
 		// expressed in terms of elements
-		size_type capacity() const;
+		size_type capacity() const noexcept;
 
 		// Returns whether the vector is empty 
 		// (i.e. whether its size is 0)
-		bool empty() const;
+		bool empty() const noexcept;
 
 		// Requests that the vector capacity be at least enough to contain n elements
 		void reserve(size_type n);
 
 		// Requests the container to reduce its capacity to fit its size
 		void shrink_to_fit();
-
-		// ---------------
-		// ELEMENT ACCESS
-		// ---------------
-
-		// Returns a reference to the element at position n in the vector
-		// with no range check
-		T& operator[](size_type n);
-		const T& operator[](size_type n) const;
-
-		// Returns a reference to the element at position n in the vector
-		// Function throws an out of range exception if the input is not within range
-		// Use the operator[] overload to access without range checking
-		T& at(size_type n);
-		const T& at(size_type n) const;
-
-		// Returns a reference to the first element in the vector
-		T& front();
-		const T& front() const;
-
-		// Returns a reference to the last element in the vector
-		T& back();
-		const T& back() const;
-
-		// Returns a direct pointer to the memory array used internally by the vector
-		// to store its owned elements
-		T* data();
-		const T* data() const;
 
 		// ---------------
 		// MODIFIERS
@@ -549,6 +549,79 @@ namespace non_stl
 	}
 
 	// ---------------
+	// ELEMENT ACCESS
+	// ---------------
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::operator[](size_type n)
+	{
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::operator[](size_type n) const
+	{
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::at(size_type n)
+	{
+		// n < 0 not allowed due to unsigned typing
+		if (n >= _size)
+		{
+			// throw out of range exception
+		}
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::at(size_type n) const
+	{
+		// n < 0 not allowed due to unsigned typing
+		if (n >= _size)
+		{
+			// throw out of range exception
+		}
+		return _data[n];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::front()
+	{
+		return _data[0];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::front() const
+	{
+		return _data[0];
+	}
+
+	template <class T, class Alloc>
+	inline T& vector<T, Alloc>::back()
+	{
+		return _data[_size - 1];
+	}
+
+	template <class T, class Alloc>
+	inline const T& vector<T, Alloc>::back() const
+	{
+		return _data[_size - 1];
+	}
+
+	template <class T, class Alloc>
+	inline T* vector<T, Alloc>::data()
+	{
+		return _data;
+	}
+
+	template <class T, class Alloc>
+	inline const T* vector<T, Alloc>::data() const
+	{
+		return _data;
+	}
+
+	// ---------------
 	// ITERATORS
 	// ---------------
 
@@ -628,7 +701,7 @@ namespace non_stl
 	// CAPACITY
 	// ---------------
 	template <class T, class Alloc>
-	inline size_type vector<T, Alloc>::size() const
+	inline size_type vector<T, Alloc>::size() const noexcept
 	{
 		return _size;
 	}
@@ -682,13 +755,13 @@ namespace non_stl
 	}
 
 	template <class T, class Alloc>
-	inline size_type vector<T, Alloc>::capacity() const
+	inline size_type vector<T, Alloc>::capacity() const noexcept
 	{
 		return _capacity;
 	}
 
 	template <class T, class Alloc>
-	inline bool vector<T, Alloc>::empty() const
+	inline bool vector<T, Alloc>::empty() const noexcept
 	{
 		return size() == 0;
 	}
@@ -715,79 +788,6 @@ namespace non_stl
 		{
 			reallocate(_size);
 		}
-	}
-
-	// ---------------
-	// ELEMENT ACCESS
-	// ---------------
-	template <class T, class Alloc>
-	inline T& vector<T, Alloc>::operator[](size_type n)
-	{
-		return _data[n];
-	}
-
-	template <class T, class Alloc>
-	inline const T& vector<T, Alloc>::operator[](size_type n) const
-	{
-		return _data[n];
-	}
-
-	template <class T, class Alloc>
-	inline T& vector<T, Alloc>::at(size_type n)
-	{
-		// n < 0 not allowed due to unsigned typing
-		if (n >= _size)
-		{
-			// throw out of range exception
-		}
-		return _data[n];
-	}
-
-	template <class T, class Alloc>
-	inline const T& vector<T, Alloc>::at(size_type n) const
-	{
-		// n < 0 not allowed due to unsigned typing
-		if (n >= _size)
-		{
-			// throw out of range exception
-		}
-		return _data[n];
-	}
-
-	template <class T, class Alloc>
-	inline T& vector<T, Alloc>::front()
-	{
-		return _data[0];
-	}
-
-	template <class T, class Alloc>
-	inline const T& vector<T, Alloc>::front() const
-	{
-		return _data[0];
-	}
-
-	template <class T, class Alloc>
-	inline T& vector<T, Alloc>::back()
-	{
-		return _data[_size - 1];
-	}
-
-	template <class T, class Alloc>
-	inline const T& vector<T, Alloc>::back() const
-	{
-		return _data[_size - 1];
-	}
-
-	template <class T, class Alloc>
-	inline T* vector<T, Alloc>::data()
-	{
-		return _data;
-	}
-
-	template <class T, class Alloc>
-	inline const T* vector<T, Alloc>::data() const
-	{
-		return _data;
 	}
 
 	// ---------------
