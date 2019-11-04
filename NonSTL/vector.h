@@ -74,11 +74,43 @@ namespace non_stl
 		// ITERATORS
 		// ---------------
 
-		// forward declare iterator types
+		// forward declare base iterator types
+		class base_iterator;
+		class base_const_iterator;
+		class forward_iterator;
+		class base_reverse_iterator;
+
+		// forward declare returned iterator types
 		class iterator;
 		class const_iterator;
+		class reverse_iterator;
+		class const_reverse_iterator;
 
+		// Returns an iterator to the first element of the container
+		// If the container is empty, the returned iterator will be equal to end()
+		iterator begin() noexcept;
+		const_iterator begin() const noexcept;
+		const_iterator cbegin() const noexcept;
 
+		// Returns an iterator to the element following the last element of the container
+		// Attempting to access or modify this element results in undefined behavior
+		iterator end() noexcept;
+		const_iterator end() const noexcept;
+		const_iterator cend() const noexcept;
+
+		// Returns a reverse iterator to the first element of the reversed container
+		// Equivalent to the last element (not end) of the non-reversed container
+		// If the container is empty, the returned iterator will be equal to rend()
+		reverse_iterator rbegin() noexcept;
+		const_reverse_iterator rbegin() const noexcept;
+		const_reverse_iterator crbegin() const noexcept;
+
+		// Returns a reverse iterator to the element following the last element of the reversed container
+		// It corresponds to the element preceding the first element of the non-reversed container
+		// Attempting to access or modify this element results in undefined behavior
+		reverse_iterator rend() noexcept;
+		const_reverse_iterator rend() const noexcept;
+		const_reverse_iterator crend() const noexcept;
 
 		// ---------------
 		// CAPACITY
@@ -203,42 +235,17 @@ namespace non_stl
 		T* _data;
 	};
 
-	// Iterator definition and impl
+	// BASE ITERATORS
+
+	// Define base_iterator which contains the standard access and equivilancy operators
+	// for all non_const iterators to derive from
 	template <class T, class Alloc>
-	class vector<T, Alloc>::iterator
+	class vector<T, Alloc>::base_iterator
 	{
 	public:
-		iterator(T* ptr) :
+		base_iterator(T* ptr) :
 			_curr(ptr)
 		{
-		}
-
-		// Prefix
-		iterator operator++(int)
-		{
-			++_curr;
-			return *this;
-		}
-
-		// Postfix
-		iterator& operator++()
-		{
-			_curr++;
-			return *this;
-		}
-
-		// Prefix
-		iterator operator--(int)
-		{
-			--_curr;
-			return *this;
-		}
-
-		// Postfix
-		iterator& operator--()
-		{
-			_curr--;
-			return *this;
 		}
 
 		T& operator*()
@@ -251,12 +258,12 @@ namespace non_stl
 			return _curr;
 		}
 
-		inline bool operator==(const iterator& rhs) const
+		inline bool operator==(const base_iterator& rhs) const
 		{
 			return *_curr == *rhs._curr;
 		}
 
-		inline bool operator!=(const iterator& rhs) const
+		inline bool operator!=(const base_iterator& rhs) const
 		{
 			return !(*this == rhs);
 		}
@@ -265,42 +272,15 @@ namespace non_stl
 		T* _curr;
 	};
 
-	// Const Iterator definition and impl
+	// Define base_const_iterator which contains the constant access and equivilancy operators
+	// for all const iterators to derive from
 	template <class T, class Alloc>
-	class vector<T, Alloc>::const_iterator
+	class vector<T, Alloc>::base_const_iterator
 	{
 	public:
-		const_iterator(T* ptr) :
+		base_const_iterator(T* ptr) :
 			_curr(ptr)
 		{
-		}
-
-		// Prefix
-		const_iterator operator++(int)
-		{
-			++_curr;
-			return *this;
-		}
-
-		// Postfix
-		const_iterator& operator++()
-		{
-			_curr++;
-			return *this;
-		}
-
-		// Prefix
-		const_iterator operator--(int)
-		{
-			--_curr;
-			return *this;
-		}
-
-		// Postfix
-		const_iterator& operator--()
-		{
-			_curr--;
-			return *this;
 		}
 
 		const T& operator*() const
@@ -313,18 +293,159 @@ namespace non_stl
 			return _curr;
 		}
 
-		inline bool operator==(const const_iterator& rhs) const
+		inline bool operator==(const base_const_iterator& rhs) const
 		{
 			return *_curr == *rhs._curr;
 		}
 
-		inline bool operator!=(const const_iterator& rhs) const
+		inline bool operator!=(const base_const_iterator& rhs) const
 		{
 			return !(*this == rhs);
 		}
 
 	private:
 		T* _curr;
+	};
+
+	// Define forward_iterator which defines the ability to iterate standardly through a container
+	// the contrast to this is reverse_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::forward_iterator
+	{
+	public:
+		forward_iterator(T* ptr) :
+			_curr(ptr)
+		{
+		}
+
+		// Prefix
+		forward_iterator operator++(int)
+		{
+			++_curr;
+			return *this;
+		}
+
+		// Postfix
+		forward_iterator& operator++()
+		{
+			_curr++;
+			return *this;
+		}
+
+		// Prefix
+		forward_iterator operator--(int)
+		{
+			--_curr;
+			return *this;
+		}
+
+		// Postfix
+		forward_iterator& operator--()
+		{
+			_curr--;
+			return *this;
+		}
+
+	private:
+		T* _curr;
+	};
+
+	// Define base_reverse_iterator which defines the ability to iterate through a container the opposite of the
+	// operator you are invoking. Increment operator takes you to the iterator before the current iterator.
+	// The contrast to this is forward_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::base_reverse_iterator
+	{
+	public:
+		base_reverse_iterator(T* ptr) :
+			_curr(ptr)
+		{
+		}
+
+		// Prefix
+		base_reverse_iterator operator++(int)
+		{
+			--_curr;
+			return *this;
+		}
+
+		// Postfix
+		base_reverse_iterator& operator++()
+		{
+			_curr--;
+			return *this;
+		}
+
+		// Prefix
+		base_reverse_iterator operator--(int)
+		{
+			++_curr;
+			return *this;
+		}
+
+		// Postfix
+		base_reverse_iterator& operator--()
+		{
+			_curr++;
+			return *this;
+		}
+
+	private:
+		T* _curr;
+	};
+
+	// ITERATOR IMPLEMENTATIONS
+
+	// Iterator definition and impl. Standard iterator is both a base_iterator and forward_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::iterator : public vector<T, Alloc>::base_iterator, 
+									   public vector<T, Alloc>::forward_iterator
+	{
+	public:
+		iterator(T* ptr) :
+			base_iterator(ptr),
+			forward_iterator(ptr)
+		{
+		}
+	};
+
+	// Const Iterator definition and impl. Const iterator is a base_const_iterator and forward_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::const_iterator : public vector<T, Alloc>::base_const_iterator, 
+											 public vector<T, Alloc>::forward_iterator
+	{
+	public:
+		const_iterator(T* ptr) :
+			base_const_iterator(ptr),
+			forward_iterator(ptr)
+		{
+		}
+	};
+
+	// Reverse Iterator definition and impl. Reverse iterator is both a base_iterator and base_reverse_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::reverse_iterator : public vector<T, Alloc>::base_iterator, 
+											   public vector<T, Alloc>::base_reverse_iterator
+	{
+	public:
+		reverse_iterator(T* ptr) :
+			base_iterator(ptr),
+			base_reverse_iterator(ptr)
+		{
+		}
+	};
+
+	// Const Reverse Iterator definition and impl. Const reverse iterator is both a base_cont_iterator and base_reverse_iterator
+	template <class T, class Alloc>
+	class vector<T, Alloc>::const_reverse_iterator : public vector<T, Alloc>::base_const_iterator,
+													 public vector<T, Alloc>::base_reverse_iterator
+	{
+	public:
+		const_reverse_iterator(T* ptr) :
+			base_const_iterator(ptr),
+			base_reverse_iterator(ptr)
+		{
+		}
 	};
 
 	// VECTOR IMPL
@@ -430,6 +551,78 @@ namespace non_stl
 	// ---------------
 	// ITERATORS
 	// ---------------
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::iterator vector<T, Alloc>::begin() noexcept
+	{
+		return vector<T, Alloc>::iterator(&_data[0]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::begin() const noexcept
+	{
+		return vector<T, Alloc>::const_iterator(&_data[0]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::cbegin() const noexcept
+	{
+		return begin();
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::iterator vector<T, Alloc>::end() noexcept
+	{
+		return vector<T, Alloc>::iterator(&_data[_size]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::end() const noexcept
+	{
+		return vector<T, Alloc>::const_iterator(&_data[_size]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::cend() const noexcept
+	{
+		return end();
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rbegin() noexcept
+	{
+		return vector<T, Alloc>::reverse_iterator(&_data[_size - 1]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rbegin() const noexcept
+	{
+		return vector<T, Alloc>::const_reverse_iterator(&_data[_size - 1]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::crbegin() const noexcept
+	{
+		return rbegin();
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rend() noexcept
+	{
+		return vector<T, Alloc>::reverse_iterator(&_data[-1]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rend() const noexcept
+	{
+		return vector<T, Alloc>::const_reverse_iterator(&_data[-1]);
+	}
+
+	template <class T, class Alloc>
+	inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::crend() const noexcept
+	{
+		return rend();
+	}
 
 	// ---------------
 	// CAPACITY
