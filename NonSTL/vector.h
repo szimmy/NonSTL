@@ -181,10 +181,10 @@ namespace non_stl
 		// Range version
 
 		// Fill version
-		//void assign(size_type n, const T& val);
+		void assign(size_type n, const T& val);
 
 		// Initializer list version
-		//void assign(std::initializer_list<T> il);
+		void assign(std::initializer_list<T> il);
 
 		// Adds a new element at the end of the vector after its current last element
 		void push_back(const T& val);
@@ -828,6 +828,44 @@ namespace non_stl
 	// MODIFIERS
 	// ---------------
 	template <class T, class Alloc>
+	void vector<T, Alloc>::assign(size_type n, const T& val)
+	{
+		// Need to clear out the elements currently assigned anyway so do it first
+		clear();
+
+		if (n > _capacity)
+		{
+			// Need to reallocate the inner array
+			reallocate((size_type)beta * n);
+		}
+
+		// Assign each new element to val
+		for (auto i = 0; i < n; ++i)
+		{
+			auto cp = T(val);
+			_data[i] = cp;
+		}
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::assign(std::initializer_list<T> il)
+	{
+		// Need to clear out elements currently assigned anyway so do it first
+		clear();
+
+		auto n = il.size();
+
+		if (n > _capacity)
+		{
+			// Need to reallocate the inner array
+			reallocate((size_type)beta * n);
+		}
+
+		// Assign each new element to val
+		copy_from_initializer_list(il);
+	}
+
+	template <class T, class Alloc>
 	void vector<T, Alloc>::push_back(const T& val)
 	{
 		if (_size == _capacity)
@@ -907,7 +945,11 @@ namespace non_stl
 	{
 		// Allocate new array and copy over data
 		auto cp = _alloc.allocate(cap);
-		std::copy_n(_data, _size, cp);
+
+		if(_size > 0)
+		{
+			std::copy_n(_data, _size, cp);
+		}
 
 		// Deallocate old array and reassign member variables
 		_alloc.deallocate(_data, _capacity);
