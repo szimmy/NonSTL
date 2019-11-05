@@ -39,7 +39,7 @@ namespace non_stl
 		// ---------------
 
 		// Default constructor
-		vector() = default;
+		vector();
 
 		// Fill constructor
 		// Constructs a vector with size elements
@@ -477,6 +477,15 @@ namespace non_stl
 	// ---------------
 	// CONSTRUCTORS
 	// ---------------
+	template <class T, class Alloc>
+	vector<T, Alloc>::vector() :
+		_capacity(10),
+		_size(0),
+		_data(_alloc.allocate(_capacity))
+	{
+
+	}
+
 	template <class T, class Alloc>
 	vector<T, Alloc>::vector(size_type size) :
 		_capacity(size),
