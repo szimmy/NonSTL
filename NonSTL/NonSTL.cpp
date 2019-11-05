@@ -7,7 +7,9 @@
 
 int main()
 {
-	non_stl::vector<int> vec(5);
-	std::cout << "Hello CMake." << std::endl;
+	non_stl::vector<int> vec = { 0,1,2 };
+	vec.assign({ 6,7,8,9 });
+	non_stl::vector<int> vec2(vec.begin(), vec.end());
+	std::cout << vec2[2] << std::endl;
 	return 0;
 }
