@@ -1030,9 +1030,9 @@ namespace non_stl
 	void vector<T, Alloc>::copy_from_initializer_list(std::initializer_list<T>& init)
 	{
 		auto count = 0;
-		for (auto it = init.begin(); it != init.end(); ++it)
+		for (auto& it : init)
 		{
-			_data[count++] = *it;
+			_data[count++] = it;
 		}
 	}
 }
