@@ -182,6 +182,8 @@ namespace non_stl
 		// and modifying its size if necessary
 
 		// Range version
+		template <class InputIterator>
+		void assign(InputIterator first, InputIterator last);
 
 		// Fill version
 		void assign(size_type n, const T& val);
@@ -879,6 +881,39 @@ namespace non_stl
 	// MODIFIERS
 	// ---------------
 	template <class T, class Alloc>
+	template <class InputIterator>
+	void vector<T, Alloc>::assign(InputIterator first, InputIterator last)
+	{
+		// Need to clear out the elements currently assigned anyway so do it first
+		clear();
+
+		auto n = 0;
+
+		// Need to obtain the size of how many elements are in the range of iterators
+		for (auto it = first; it != last; ++it)
+		{
+			++n;
+		}
+
+		if (n > _capacity)
+		{
+			// Need to reallocate the inner array
+			reallocate((size_type)beta * n);
+		}
+
+		// Assign size of vector
+		_size = n;
+
+		n = 0;
+
+		// Populate data
+		for (auto it2 = first; it2 != last; ++it2)
+		{
+			_data[n++] = *it2;
+		}
+	}
+
+	template <class T, class Alloc>
 	void vector<T, Alloc>::assign(size_type n, const T& val)
 	{
 		// Need to clear out the elements currently assigned anyway so do it first
@@ -918,7 +953,7 @@ namespace non_stl
 		// Assign size of vector
 		_size = n;
 
-		// Assign each new element to val
+		// Assign each new element
 		copy_from_initializer_list(il);
 	}
 
