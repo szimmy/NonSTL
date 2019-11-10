@@ -198,6 +198,26 @@ namespace non_stl
 		// Removes the last element in the vector
 		void pop_back();
 
+		// The vector is extended by inserting new elements before the element 
+		// at the specified position, effectively increasing the container size
+		// by the number of elements inserted
+
+		// Single element
+		iterator insert(iterator position, const T& val);
+
+		// Fill
+		iterator insert(iterator position, size_type n, const T& val);
+
+		// Range
+		template <class InputIterator>
+		iterator insert(iterator position, InputIterator first, InputIterator last);
+
+		// Move 
+		iterator insert(iterator position, T&& val);
+
+		// Initializer list
+		iterator insert(iterator position, std::initializer_list<T> il);
+
 		// Exchanges the content of the container by the content of x
 		// which is another vector object of the same type
 		void swap(vector& x);
@@ -230,6 +250,16 @@ namespace non_stl
 		// Copy items from initializer list into _data
 		// Assumed that _data is empty and properly sized
 		void copy_from_initializer_list(std::initializer_list<T>& init);
+
+		// Shift the underlying array for the vector by n indicies
+		// from idx until the end of the array
+		void shift_array(size_type n, size_type idx);
+
+		// Returns an iterator that is n positions from begin
+		iterator get_iterator(size_type n);
+
+		template <class InputIterator>
+		size_type get_iterator_diff(InputIterator first, InputIterator last);
 
 		// Member variables
 
@@ -516,11 +546,7 @@ namespace non_stl
 		_capacity(0),
 		_size(0)
 	{
-		for (auto it = first; it != last; it++)
-		{
-			++_size;
-		}
-
+		_size = get_iterator_diff(first, last);
 		_capacity = (size_type)beta * _size;
 		_data = _alloc.allocate(_capacity);
 
@@ -827,7 +853,7 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::resize(size_type n, const T& val)
 	{
-		auto old_size = _size;
+		const auto old_size = _size;
 		resize(n);
 
 		// Need to assign the new values of the resized vector to val
@@ -887,18 +913,13 @@ namespace non_stl
 		// Need to clear out the elements currently assigned anyway so do it first
 		clear();
 
-		auto n = 0;
-
 		// Need to obtain the size of how many elements are in the range of iterators
-		for (auto it = first; it != last; ++it)
-		{
-			++n;
-		}
+		auto n = get_iterator_diff(first, last);
 
 		if (n > _capacity)
 		{
 			// Need to reallocate the inner array
-			reallocate((size_type)beta * n);
+			reallocate((size_type)(beta * n));
 		}
 
 		// Assign size of vector
@@ -922,7 +943,7 @@ namespace non_stl
 		if (n > _capacity)
 		{
 			// Need to reallocate the inner array
-			reallocate((size_type)beta * n);
+			reallocate((size_type)(beta * n));
 		}
 
 		// Assign size of vector
@@ -947,7 +968,7 @@ namespace non_stl
 		if (n > _capacity)
 		{
 			// Need to reallocate the inner array
-			reallocate((size_type)beta * n);
+			reallocate((size_type)(beta * n));
 		}
 
 		// Assign size of vector
@@ -963,7 +984,7 @@ namespace non_stl
 		// Check for reallocation
 		if (_size == _capacity)
 		{
-			reallocate((size_type)beta * _capacity);
+			reallocate((size_type)(beta * _capacity));
 		}
 
 		auto cp = T(val);
@@ -976,7 +997,7 @@ namespace non_stl
 		// Check for reallocation
 		if (_size == _capacity)
 		{
-			reallocate((size_type)beta * _capacity);
+			reallocate((size_type)(beta * _capacity));
 		}
 
 		auto cp = T(std::forward<T>(val));
@@ -990,6 +1011,123 @@ namespace non_stl
 		// and decrement size so we can write over it later
 		_data[_size - 1].~T();
 		--_size;
+	}
+
+	template <class T, class Alloc>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, const T& val)
+	{
+		const auto idx = &(*position) - _data;
+
+		if (_size == _capacity)
+		{
+			// Need to reallocate
+			reallocate((size_type)(beta * _capacity));
+		}
+
+		// Need to shift the array over by n indicies from the end until idx
+		shift_array(1, idx);
+
+		auto cp = T(val);
+		_data[idx] = cp;
+
+		return get_iterator(idx);
+	}
+
+	template <class T, class Alloc>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, size_type n, const T& val)
+	{
+		// Could have just called insert(const_iterator, const T&) n times in a row but
+		// wanted to save on function overhead. Will have to benchmark difference it makes
+
+		const auto idx = &(*position) - _data;
+		const auto old_size = _size;
+
+		if (_size + n >= _capacity)
+		{
+			// Need to reallocate
+			reallocate((size_type)(beta * (_size + n)));
+		}
+
+		// Need to shift the array over by n indicies
+		shift_array(n, idx);
+
+		for (auto i = idx; i < old_size; ++i)
+		{
+			auto cp = T(val);
+			_data[i] = cp;
+		}
+
+		return get_iterator(idx);
+	}
+
+	template <class T, class Alloc>
+	template <class InputIterator>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
+	{
+		const auto idx = &(*position) - _data;
+		const auto n = get_iterator_diff(first, last);
+		const auto old_size = _size;
+
+		if (_size + n >= _capacity)
+		{
+			// Need to reallocate
+			reallocate((size_type)(beta * (_size + n)));
+		}
+
+		// Need to shift the array over by n indicies
+		shift_array(n, idx);
+
+		auto it = first;
+		for (auto i = idx; i < old_size; ++i)
+		{
+			_data[i] = *(it++);
+		}
+
+		return get_iterator(idx);
+	}
+
+	template <class T, class Alloc>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, T&& val)
+	{
+		const auto idx = &(*position) - _data;
+
+		if (_size == _capacity)
+		{
+			// Need to reallocate
+			reallocate((size_type)(beta * _capacity));
+		}
+
+		// Need to shift the array over by n indicies from the end until idx
+		shift_array(1, idx);
+
+		auto cp = T(std::forward<T>(val));
+		_data[idx] = cp;
+
+		return get_iterator(idx);
+	}
+
+	template <class T, class Alloc>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, std::initializer_list<T> il)
+	{
+		const auto idx = &(*position) - _data;
+		const auto n = il.size();
+
+		if (_size + n >= _capacity)
+		{
+			// Need to reallocate
+			reallocate((size_type)(beta * (_size + n)));
+		}
+
+		// Need to shift the array over by n indicies
+		shift_array(n, idx);
+
+		auto i = idx;
+		for (auto& it : il)
+		{
+			_data[idx++] = it;
+		}
+
+		return get_iterator(idx);
 	}
 
 	template <class T, class Alloc>
@@ -1069,5 +1207,75 @@ namespace non_stl
 		{
 			_data[count++] = it;
 		}
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::shift_array(size_type n, size_type idx)
+	{
+		auto copy_to = _size;
+		auto copy_from = _size - n;
+		auto complete = false;
+
+		// TODO boolean check needed here since visual studio was bugging out
+		// and saying -1 >= 0 is true when copy_from was assigned to an int
+		while(copy_from >= idx && !complete)
+		{
+			_data[copy_to--] = _data[copy_from];
+			if (copy_from == 0)
+			{
+				complete = true;
+			}
+			--copy_from;
+		}
+
+		// Adjust the size counter for the vector
+		_size += n;
+	}
+
+	template <class T, class Alloc>
+	typename vector<T, Alloc>::iterator vector<T, Alloc>::get_iterator(size_type n)
+	{
+		// Get the difference from the index to the end of the vector
+		auto diff = _size - n;
+
+		vector<T, Alloc>::iterator it = diff < n ? end() : begin();
+
+		// Decide whether to iterate from the front or back of the vector
+		if (diff < n)
+		{
+			// Shorter to iterate from the back
+			it = end();
+
+			// Decrease the iterator diff times
+			for (auto i = 0; i < diff; ++i)
+			{
+				--it;
+			}
+		}
+		else
+		{
+			// Short to iterate from the front
+			it = begin();
+
+			// Increase the iterator n times
+			for (auto i = 0; i < n; ++i)
+			{
+				++it;
+			}
+		}
+
+		return it;
+	}
+
+	template <class T, class Alloc>
+	template <class InputIterator>
+	size_type vector<T, Alloc>::get_iterator_diff(InputIterator first, InputIterator last)
+	{
+		auto ret = 0;
+		for (auto it = first; it != last; it++)
+		{
+			++ret;
+		}
+		return ret;
 	}
 }
