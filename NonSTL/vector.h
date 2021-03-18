@@ -195,6 +195,11 @@ namespace non_stl
 		void push_back(const T& val);
 		void push_back(T&& val);
 
+		// Appends a new element to the end of the container.
+		// The arguments args... are forwarded to the constructor as std::forward<Args>(args).... 
+		template <class... Args>
+		void emplace_back(Args&& ... args);
+
 		// Removes the last element in the vector
 		void pop_back();
 
@@ -535,8 +540,7 @@ namespace non_stl
 	{
 		for (auto i = 0; i < size; ++i)
 		{
-			auto cp = T(val);
-			_data[i] = cp;
+			_alloc.construct((_data + i), val);
 		}
 	}
 
@@ -861,8 +865,7 @@ namespace non_stl
 		{
 			for (auto i = old_size - 1; i < _size; ++i)
 			{
-				auto cp = T(val);
-				_data[i] = cp;
+				_alloc.construct((_data + i), val);
 			}
 		}
 	}
@@ -952,8 +955,7 @@ namespace non_stl
 		// Assign each new element to val
 		for (auto i = 0; i < n; ++i)
 		{
-			auto cp = T(val);
-			_data[i] = cp;
+			_alloc.construct((_data + i), val);
 		}
 	}
 
@@ -987,8 +989,7 @@ namespace non_stl
 			reallocate((size_type)(beta * _capacity));
 		}
 
-		auto cp = T(val);
-		_data[_size++] = cp;
+		_alloc.construct((_data + _size++), val);
 	}
 
 	template <class T, class Alloc>
@@ -1000,8 +1001,20 @@ namespace non_stl
 			reallocate((size_type)(beta * _capacity));
 		}
 
-		auto cp = T(std::forward<T>(val));
-		_data[_size++] = cp;
+		_alloc.construct((_data + _size++), std::forward<T>(val));
+	}
+
+	template <class T, class Alloc>
+	template <class... Args>
+	void vector<T, Alloc>::emplace_back(Args&& ... args)
+	{
+		// Check for reallocation
+		if (_size == _capacity)
+		{
+			reallocate((size_type)(beta * _capacity));
+		}
+
+		_alloc.construct((_data + _size++), std::forward<Args>(args)...);
 	}
 
 	template <class T, class Alloc>
@@ -1027,8 +1040,7 @@ namespace non_stl
 		// Need to shift the array over by n indicies from the end until idx
 		shift_array(1, idx);
 
-		auto cp = T(val);
-		_data[idx] = cp;
+		_alloc.construct((_data + idx), val);
 
 		return get_iterator(idx);
 	}
@@ -1053,8 +1065,7 @@ namespace non_stl
 
 		for (auto i = idx; i < old_size; ++i)
 		{
-			auto cp = T(val);
-			_data[i] = cp;
+			_alloc.construct((_data + i), val);
 		}
 
 		return get_iterator(idx);
@@ -1100,8 +1111,7 @@ namespace non_stl
 		// Need to shift the array over by n indicies from the end until idx
 		shift_array(1, idx);
 
-		auto cp = T(std::forward<T>(val));
-		_data[idx] = cp;
+		_alloc.construct((_data + idx), val);
 
 		return get_iterator(idx);
 	}
@@ -1205,7 +1215,7 @@ namespace non_stl
 		auto count = 0;
 		for (auto& it : init)
 		{
-			_data[count++] = it;
+			_alloc.construct((_data + count++), it);
 		}
 	}
 
