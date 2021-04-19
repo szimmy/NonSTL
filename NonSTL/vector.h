@@ -15,6 +15,8 @@
 #include <memory>			// std::allocator
 #include <utility>			// std::forward
 
+#include <iostream>
+
 using size_type = size_t;
 
 namespace non_stl
@@ -525,18 +527,21 @@ namespace non_stl
 
 	template <class T, class Alloc>
 	vector<T, Alloc>::vector(size_type size) :
-		_capacity(size),
-		_size(0),
+		_capacity((size_type)(beta* size)),
+		_size(size),
 		_data(_alloc.allocate(size))
 	{
-
+		for (auto i = 0; i < size; ++i)
+		{
+			_alloc.construct((_data + i), T());
+		}
 	}
 
 	template <class T, class Alloc>
 	vector<T, Alloc>::vector(size_type size, const T& val) :
 		_capacity((size_type)(beta * size)),
 		_size(size),
-		_data(_alloc.allocate(size))
+		_data(_alloc.allocate(_capacity))
 	{
 		for (auto i = 0; i < size; ++i)
 		{
@@ -550,14 +555,26 @@ namespace non_stl
 		_capacity(0),
 		_size(0)
 	{
-		_size = get_iterator_diff(first, last);
-		_capacity = (size_type)beta * _size;
-		_data = _alloc.allocate(_capacity);
+		if constexpr (std::is_integral<InputIterator>::value) {
+			_capacity = (size_type)(beta * first);
+			_size = first;
+			_data = _alloc.allocate(_capacity);
 
-		auto count = 0;
-		for (auto it2 = first; it2 != last; ++it2)
-		{
-			_data[count++] = *it2;
+			for (auto i = 0; i < first; ++i)
+			{
+				_alloc.construct((_data + i), last);
+			}
+		}
+		else {
+			_size = get_iterator_diff(first, last);
+			_capacity = (size_type)(beta * _size);
+			_data = _alloc.allocate(_capacity);
+
+			auto count = 0;
+			for (auto it2 = first; it2 != last; ++it2)
+			{
+				_data[count++] = *it2;
+			}
 		}
 	}
 
@@ -586,7 +603,7 @@ namespace non_stl
 
 	template <class T, class Alloc>
 	vector<T, Alloc>::vector(std::initializer_list<T> init) :
-		_capacity((size_type) beta * init.size()),
+		_capacity((size_type)(beta * init.size())),
 		_size(init.size()),
 		_data(_alloc.allocate(_size))
 	{
