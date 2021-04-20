@@ -30,7 +30,7 @@ namespace non_stl
 	class vector
 	{
 		// Coefficient for expanding the capacity of the underlying array
-		const double beta = 1.5;
+		const double beta = 2.0;
 
 		// ---------------
 		// BEGIN INTERFACE
@@ -211,9 +211,6 @@ namespace non_stl
 
 		// Single element
 		iterator insert(iterator position, const T& val);
-
-		// Fill
-		iterator insert(iterator position, size_type n, const T& val);
 
 		// Range
 		template <class InputIterator>
@@ -605,7 +602,7 @@ namespace non_stl
 	vector<T, Alloc>::vector(std::initializer_list<T> init) :
 		_capacity((size_type)(beta * init.size())),
 		_size(init.size()),
-		_data(_alloc.allocate(_size))
+		_data(_alloc.allocate(_capacity))
 	{
 		copy_from_initializer_list(init);
 	}
@@ -868,6 +865,7 @@ namespace non_stl
 		{
 			// Perform reallocation of the array
 			reallocate(n);
+			_size = n;
 		}
 	}
 
@@ -902,7 +900,7 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::reserve(size_type n)
 	{
-		if (n <= _size)
+		if (n <= _capacity)
 		{
 			return;
 		}
@@ -933,24 +931,42 @@ namespace non_stl
 		// Need to clear out the elements currently assigned anyway so do it first
 		clear();
 
-		// Need to obtain the size of how many elements are in the range of iterators
-		auto n = get_iterator_diff(first, last);
+		if constexpr (std::is_integral<InputIterator>::value) {
+			if (first >= _capacity)
+			{
+				// Need to reallocate the inner array
+				reallocate((size_type)(beta * first));
+			}
 
-		if (n > _capacity)
-		{
-			// Need to reallocate the inner array
-			reallocate((size_type)(beta * n));
+			// Assign size of vector
+			_size = first;
+
+			// Assign each new element to val
+			for (auto i = 0; i < first; ++i)
+			{
+				_alloc.construct((_data + i), last);
+			}
 		}
+		else {
+			// Need to obtain the size of how many elements are in the range of iterators
+			auto n = get_iterator_diff(first, last);
 
-		// Assign size of vector
-		_size = n;
+			if (n >= _capacity)
+			{
+				// Need to reallocate the inner array
+				reallocate((size_type)(beta * n));
+			}
 
-		n = 0;
+			// Assign size of vector
+			_size = n;
 
-		// Populate data
-		for (auto it2 = first; it2 != last; ++it2)
-		{
-			_data[n++] = *it2;
+			n = 0;
+
+			// Populate data
+			for (auto it2 = first; it2 != last; ++it2)
+			{
+				_data[n++] = *it2;
+			}
 		}
 	}
 
@@ -960,7 +976,7 @@ namespace non_stl
 		// Need to clear out the elements currently assigned anyway so do it first
 		clear();
 
-		if (n > _capacity)
+		if (n >= _capacity)
 		{
 			// Need to reallocate the inner array
 			reallocate((size_type)(beta * n));
@@ -984,7 +1000,7 @@ namespace non_stl
 
 		auto n = il.size();
 
-		if (n > _capacity)
+		if (n >= _capacity)
 		{
 			// Need to reallocate the inner array
 			reallocate((size_type)(beta * n));
@@ -1063,32 +1079,6 @@ namespace non_stl
 	}
 
 	template <class T, class Alloc>
-	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, size_type n, const T& val)
-	{
-		// Could have just called insert(const_iterator, const T&) n times in a row but
-		// wanted to save on function overhead. Will have to benchmark difference it makes
-
-		const auto idx = &(*position) - _data;
-		const auto old_size = _size;
-
-		if (_size + n >= _capacity)
-		{
-			// Need to reallocate
-			reallocate((size_type)(beta * (_size + n)));
-		}
-
-		// Need to shift the array over by n indicies
-		shift_array(n, idx);
-
-		for (auto i = idx; i < old_size; ++i)
-		{
-			_alloc.construct((_data + i), val);
-		}
-
-		return get_iterator(idx);
-	}
-
-	template <class T, class Alloc>
 	template <class InputIterator>
 	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
 	{
@@ -1108,7 +1098,8 @@ namespace non_stl
 		auto it = first;
 		for (auto i = idx; i < old_size; ++i)
 		{
-			_data[i] = *(it++);
+			_data[i] = *(it);
+			++it;
 		}
 
 		return get_iterator(idx);
@@ -1239,12 +1230,10 @@ namespace non_stl
 	template <class T, class Alloc>
 	void vector<T, Alloc>::shift_array(size_type n, size_type idx)
 	{
-		auto copy_to = _size;
-		auto copy_from = _size - n;
+		auto copy_to = _size + n;
+		auto copy_from = _size;
 		auto complete = false;
 
-		// TODO boolean check needed here since visual studio was bugging out
-		// and saying -1 >= 0 is true when copy_from was assigned to an int
 		while(copy_from >= idx && !complete)
 		{
 			_data[copy_to--] = _data[copy_from];
