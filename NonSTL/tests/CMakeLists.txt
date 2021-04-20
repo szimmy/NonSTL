@@ -1,3 +1,3 @@
-add_executable(test test.cpp)
-target_link_libraries(test gtest_main)
-add_test(NAME test_test COMMAND test)
+add_executable(vector_test vector_t.cpp)
+target_link_libraries(vector_test gtest_main)
+add_test(NAME vec_test COMMAND vector_test)
