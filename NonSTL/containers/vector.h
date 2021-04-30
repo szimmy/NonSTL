@@ -15,8 +15,6 @@
 #include <memory>			// std::allocator
 #include <utility>			// std::forward
 
-#include <iostream>
-
 using size_type = size_t;
 
 namespace non_stl
