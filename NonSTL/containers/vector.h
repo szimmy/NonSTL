@@ -528,7 +528,7 @@ namespace non_stl
 	{
 		for (auto i = 0; i < size; ++i)
 		{
-			_alloc.construct((_data + i), T());
+			_data[i] = T();
 		}
 	}
 
@@ -540,7 +540,7 @@ namespace non_stl
 	{
 		for (auto i = 0; i < size; ++i)
 		{
-			_alloc.construct((_data + i), val);
+			_data[i] = val;
 		}
 	}
 
@@ -557,7 +557,7 @@ namespace non_stl
 
 			for (auto i = 0; i < first; ++i)
 			{
-				_alloc.construct((_data + i), last);
+				_data[i] = last;
 			}
 		}
 		else {
@@ -622,6 +622,8 @@ namespace non_stl
 		// Initialize proper sized container and copy elements
 		_data = _alloc.allocate(_capacity);
 		std::copy_n(rhs_data, _size, _data);
+
+		return *this;
 	}
 
 	template <class T, class Alloc>
@@ -631,6 +633,8 @@ namespace non_stl
 		// The destructor will be called on rvalue which will
 		// clean up the memory allocated to the original vector
 		swap(rhs);
+
+		return *this;
 	}
 
 	template <class T, class Alloc>
@@ -649,6 +653,8 @@ namespace non_stl
 
 		// Copy data from initializer list into _data
 		copy_from_initializer_list(init);
+
+		return *this;
 	}
 
 	// ---------------
@@ -878,7 +884,7 @@ namespace non_stl
 		{
 			for (auto i = old_size - 1; i < _size; ++i)
 			{
-				_alloc.construct((_data + i), val);
+				_data[i] = val;
 			}
 		}
 	}
@@ -942,7 +948,7 @@ namespace non_stl
 			// Assign each new element to val
 			for (auto i = 0; i < first; ++i)
 			{
-				_alloc.construct((_data + i), last);
+				_data[i] = last;
 			}
 		}
 		else {
@@ -986,7 +992,7 @@ namespace non_stl
 		// Assign each new element to val
 		for (auto i = 0; i < n; ++i)
 		{
-			_alloc.construct((_data + i), val);
+			_data[i] = val;
 		}
 	}
 
@@ -1020,7 +1026,7 @@ namespace non_stl
 			reallocate((size_type)(beta * _capacity));
 		}
 
-		_alloc.construct((_data + _size++), val);
+		_data[_size++] = val;
 	}
 
 	template <class T, class Alloc>
@@ -1032,7 +1038,7 @@ namespace non_stl
 			reallocate((size_type)(beta * _capacity));
 		}
 
-		_alloc.construct((_data + _size++), std::forward<T>(val));
+		_data[_size++] = std::forward<T>(val);
 	}
 
 	template <class T, class Alloc>
@@ -1045,7 +1051,7 @@ namespace non_stl
 			reallocate((size_type)(beta * _capacity));
 		}
 
-		_alloc.construct((_data + _size++), std::forward<Args>(args)...);
+		_data[_size++] = T(std::forward<Args>(args)...);
 	}
 
 	template <class T, class Alloc>
@@ -1071,7 +1077,7 @@ namespace non_stl
 		// Need to shift the array over by n indicies from the end until idx
 		shift_array(1, idx);
 
-		_alloc.construct((_data + idx), val);
+		_data[idx] = val;
 
 		return get_iterator(idx);
 	}
@@ -1117,7 +1123,7 @@ namespace non_stl
 		// Need to shift the array over by n indicies from the end until idx
 		shift_array(1, idx);
 
-		_alloc.construct((_data + idx), val);
+		_data[idx] = val;
 
 		return get_iterator(idx);
 	}
@@ -1221,7 +1227,7 @@ namespace non_stl
 		auto count = 0;
 		for (auto& it : init)
 		{
-			_alloc.construct((_data + count++), it);
+			_data[count++] = it;
 		}
 	}
 
