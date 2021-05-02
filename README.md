@@ -8,8 +8,10 @@ All components are noexcept safe and allocator aware.
 # Completed components
 containers/vector
 
-# In progress
 containers/circular_buffer - A ring / circular buffer implementation of templated size
+
+# In progress
+None
 
 # Future work
 containers/deque
