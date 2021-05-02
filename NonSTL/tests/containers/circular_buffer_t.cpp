@@ -12,8 +12,40 @@ TEST(BasicConstruct, Basic) {
 TEST(CapacityTest, Basic) {
 	non_stl::circular_buffer<int, 5> buffer;
 
-	//ASSERT_EQ(buffer.capacity(), 5);
-	//ASSERT_EQ(buffer.max_size(), 5);
+	ASSERT_EQ(buffer.capacity(), 5);
+	ASSERT_EQ(buffer.max_size(), 5);
+}
+
+TEST(EmptyTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	ASSERT_TRUE(buffer.empty());
+
+	buffer.push_back(1);
+
+	ASSERT_FALSE(buffer.empty());
+}
+
+TEST(SizeTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	ASSERT_EQ(buffer.size(), 0);
+
+	buffer.push_back(1);
+
+	ASSERT_EQ(buffer.size(), 1);
+
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+	buffer.push_back(1);
+
+	// Make sure size never goes over capacity
+	ASSERT_EQ(buffer.size(), buffer.capacity());
 }
 
 TEST(PushBackTest, Basic) {
@@ -162,6 +194,172 @@ TEST(PopFrontTest, Basic) {
 	buffer2.pop_front();
 	ASSERT_EQ(buffer2.front(), 6);
 	ASSERT_EQ(buffer2.back(), 6);
+}
+
+TEST(CopyCtorTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	buffer.push_back(1);
+	buffer.push_back(2);
+
+	ASSERT_EQ(buffer.front(), 1);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.front() = 3;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.back() = 5;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 5);
+
+	non_stl::circular_buffer<int, 5> buffer2{ buffer };
+	ASSERT_EQ(buffer2.front(), 3);
+	ASSERT_EQ(buffer2.back(), 5);
+}
+
+TEST(MoveCtorTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	buffer.push_back(1);
+	buffer.push_back(2);
+
+	ASSERT_EQ(buffer.front(), 1);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.front() = 3;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.back() = 5;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 5);
+
+	non_stl::circular_buffer<int, 5> buffer2{ std::move(buffer) };
+	ASSERT_EQ(buffer2.front(), 3);
+	ASSERT_EQ(buffer2.back(), 5);
+}
+
+TEST(OpEqTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	buffer.push_back(1);
+	buffer.push_back(2);
+
+	ASSERT_EQ(buffer.front(), 1);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.front() = 3;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.back() = 5;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 5);
+
+	non_stl::circular_buffer<int, 5> buffer2;
+	buffer2 = buffer;
+	ASSERT_EQ(buffer2.front(), 3);
+	ASSERT_EQ(buffer2.back(), 5);
+}
+
+TEST(OpEqRvTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	buffer.push_back(1);
+	buffer.push_back(2);
+
+	ASSERT_EQ(buffer.front(), 1);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.front() = 3;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 2);
+
+	buffer.back() = 5;
+	ASSERT_EQ(buffer.front(), 3);
+	ASSERT_EQ(buffer.back(), 5);
+
+	auto rvalueOpEq = [](non_stl::circular_buffer<int, 5>&& rhs) {
+		non_stl::circular_buffer<int, 5> buffer;
+		buffer = std::forward< non_stl::circular_buffer<int, 5> >(rhs);
+		ASSERT_EQ(buffer.front(), 3);
+		ASSERT_EQ(buffer.back(), 5);
+	};
+
+	rvalueOpEq(std::move(buffer));
+}
+
+TEST(AtTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+
+	// For the first element added head and tail should be the same
+	buffer.push_back(1);
+	ASSERT_EQ(buffer.at(0), 1);
+
+	// Until buffer size is reached tail should keep going up and head stays
+	buffer.push_back(2);
+	ASSERT_EQ(buffer.at(1), 2);
+
+	buffer.push_back(3);
+	ASSERT_EQ(buffer.at(2), 3);
+
+	buffer.push_back(4);
+	ASSERT_EQ(buffer.at(3), 4);
+
+	buffer.push_back(5);
+	ASSERT_EQ(buffer.at(4), 5);
+
+	// Pushing more in than the buffer can hold, should overwrite the oldest number
+	// Tail should still read the most recent value
+	buffer.push_back(6);
+	ASSERT_EQ(buffer.at(0), 2);
+}
+
+TEST(IteratorTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+	buffer.push_back(1);
+	buffer.push_back(2);
+	buffer.push_back(3);
+
+	auto it = buffer.begin();
+	ASSERT_EQ(*it, 1);
+	++it;
+	ASSERT_EQ(*it, 2);
+	++it;
+	ASSERT_EQ(*it, 3);
+	++it;
+
+	// Out of elements, should equal end
+	ASSERT_TRUE(it == buffer.end());
+
+	// Make sure iterator doesn't wrap around
+	ASSERT_NE(*it, 1);
+	// Or stay the same value
+	ASSERT_NE(*it, 3);
+}
+
+TEST(ReverseIteratorTest, Basic) {
+	non_stl::circular_buffer<int, 5> buffer;
+	buffer.push_back(1);
+	buffer.push_back(2);
+	buffer.push_back(3);
+
+	auto it = buffer.rbegin();
+	ASSERT_EQ(*it, 3);
+	++it;
+	ASSERT_EQ(*it, 2);
+	++it;
+	ASSERT_EQ(*it, 1);
+	++it;
+
+	// Out of elements, should equal end
+	ASSERT_TRUE(it == buffer.rend());
+
+	// Make sure iterator doesn't wrap around
+	ASSERT_NE(*it, 3);
+	// Or stay the same value
+	ASSERT_NE(*it, 1);
 }
 
 int main(int argc, char** argv) {

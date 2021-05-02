@@ -530,7 +530,7 @@ namespace non_stl
 	template <class T, size_type N>
 	constexpr size_type circular_buffer<T, N>::capacity() const noexcept
 	{
-		return BUFFER_SIZE;
+		return max_size();
 	}
 
 	// ---------------
