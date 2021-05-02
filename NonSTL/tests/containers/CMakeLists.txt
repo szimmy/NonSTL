@@ -1,0 +1,7 @@
+add_executable(vector_test vector_t.cpp)
+target_link_libraries(vector_test gtest_main)
+add_test(NAME vec_test COMMAND vector_test)
+
+add_executable(circular_buffer_test circular_buffer_t.cpp)
+target_link_libraries(circular_buffer_test gtest_main)
+add_test(NAME circular_test COMMAND circular_buffer_test)
